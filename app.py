@@ -27,13 +27,21 @@ with col1:
     fig1 = px.bar(data.groupby('Region').agg({'Sales':'sum','Profit':'sum'}).reset_index(),
                   x='Region', y=['Sales','Profit'], title="Ventas y Profit por Región")
     st.plotly_chart(fig1, use_container_width=True)
-
+    
+# Evolución mensual (CORREGIDO 100% para Streamlit Cloud 2025)
 with col2:
-    monthly = data.groupby([data['Order Date'].dt.year, data['Order Date'].dt.month_name()], 
-                          sort=False)['Sales'].sum().reset_index()
-    fig2 = px.line(monthly, x='Order Date', y='Sales', color='Order Date', 
-                   title="Evolución Mensual")
+    monthly = data.copy()
+    monthly['Year'] = monthly['Order Date'].dt.year
+    monthly['Month'] = monthly['Order Date'].dt.strftime('%b')
+    monthly = monthly.groupby(['Year', 'Month'])['Sales'].sum().reset_index()
+    monthly = monthly.sort_values(['Year', 'Month'])
+    
+    fig2 = px.line(monthly, x='Month', y='Sales', color='Year', markers=True,
+                   title="Evolución Mensual de Ventas",
+                   labels={'Month': 'Mes', 'Sales': 'Ventas ($)'})
+    fig2.update_layout(hovermode="x unified")
     st.plotly_chart(fig2, use_container_width=True)
+
 
 st.plotly_chart(px.scatter(data.groupby('Product Name').agg({'Sales':'sum','Profit':'mean','Quantity':'sum'})
                           .nlargest(10,'Sales').reset_index(),
